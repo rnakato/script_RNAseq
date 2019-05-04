@@ -1,8 +1,17 @@
-# script_RNAseq
+## Scripts for RNA-seq analysis
+---
+### csv2xlsx.pl
+merge csv/tsv files to a single xlsx file
+
+    csv2xlsx.pl -i file1.tsv -n tabname1 [-i file2.tsv -n tabname2 ...] -o output.xlsx
+
+---
 ### star.sh: execute STAR
 #### Usage
 
-    star.sh <single|paired> <output prefix> <fastq> <Ensembl|UCSC> <build>  <--forward-prob [0-1]>
+    star.sh <single|paired> <output prefix> <fastq> <Ensembl|UCSC> <build> <--forward-prob>
+
+For `--forward-prob`, supply 0 for stranded RNA-seq and 0.5 for unstranded RNA-seq.
 
 Output: 
 * star/*Aligned.sortedByCoord.out.bam # mapfile for genome
