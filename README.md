@@ -5,7 +5,7 @@ merge csv/tsv files to a single xlsx file
 
     csv2xlsx.pl -i file1.tsv -n tabname1 [-i file2.tsv -n tabname2 ...] -o output.xlsx
     Options:
-           -d --delim=<str>: delimiter of input files (default:\t)
+          -d --delim=<str>: delimiter of input files (default:\t)
 
 ---
 ## RNA-seq pipeline
