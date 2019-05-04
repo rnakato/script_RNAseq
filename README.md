@@ -17,7 +17,7 @@ Command example:
     edgeR.sh Matrix.CdLS Ensembl GRCh38 2:2 0.05
 
 
-### star.sh: execute STAR
+### star.sh: execute STAR and RSEM
 #### Usage
 
     star.sh <single|paired> <output prefix> <fastq> <Ensembl|UCSC> <build> <--forward-prob>
@@ -25,10 +25,11 @@ Command example:
 For `--forward-prob`, supply 0 for stranded RNA-seq and 0.5 for unstranded RNA-seq.
 
 Output: 
-* star/*Aligned.sortedByCoord.out.bam # mapfile for genome
-* star/*.Aligned.toTranscriptome.out.bam  # mapfile for gene
-* star/*.<genes|isoforms>.results  # gene expression data
-* log/star-*.txt
+* mapfile for a genome (star/*.Aligned.sortedByCoord.out.bam)
+* mapfile for genes (star/*.Aligned.toTranscriptome.out.bam)
+* gene expression data (star/*.genes.results)
+* transcript expression data (star/*.isoforms.results)
+* mapping stats (log/star-*.txt)
 
 log example:
 
@@ -37,18 +38,17 @@ log example:
 |29446992	|27430449	|93.15	|1012811	|3.44	|5253	|0.02	|0%|	3%	|0%	|0	|0	|18960488	|18725703	|98.76	|30590	|0.16	|0.19	|0.01	|0.01|
 
 
-### Example
+### rsem_merge.sh: merge expression data of multiple samples
 
-### rsem_merge.sh: execute RSEM
-
-    rsem_merge.sh <files> <output> <Ensembl|UCSC> <build> <strings for sed>
+    rsem_merge.sh <files> <output> <Ensembl|UCSC> <build> <strings for removal>
 
 Output:
-* gene expression data: *.<genes|isoforms>.<TPM|count>.<build>.txt
-* merged xlsx: *.<build>.xlsx 
+* gene expression data: *.genes.<TPM|count>.<build>.txt
+* transcript expression data: *.isoforms.<TPM|count>.<build>.txt
+* merged xlsx file: *.<build>.xlsx 
 
 
-### edgeR.sh: execute edgeR for two groups
+### edgeR.sh: differential expression analysis for two groups by edgeR
 
     edgeR.sh [-a] <Matrix> <Ensembl|UCSC> <build> <num of reps> <groupname>  <FDR>
 
