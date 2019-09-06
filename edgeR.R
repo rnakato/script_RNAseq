@@ -238,8 +238,7 @@ ma = ggplot(Data, aes(logCPM, logFC)) +
     geom_point(aes(col=significant)) +
     scale_color_manual(values=c("black", "red")) +
     ggtitle(paste("MA plot (", gname1, ", ", gname2, ")", sep=""))
-ma
-ggsave(paste(output, ".edgeR.MAplot.pdf", sep=""), device="pdf")
+ggsave(paste(output, ".edgeR.MAplot.pdf", sep=""), plot=ma, device="pdf")
 
 # Volcano plot
 cat('\nmake Volcano plot\n',file=stdout())
@@ -252,8 +251,8 @@ volc = ggplot(volcanoData, aes(logFC, FDR)) +
     geom_point(aes(col=significant)) +
     scale_color_manual(values=c("black", "red")) +
     ggtitle(paste("Volcano plot (", gname1, ", ", gname2, ")", sep=""))
-volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decreasing=T),], 20), aes(label=Gene))
-ggsave(paste(output, ".edgeR.Volcano.pdf", sep=""), device="pdf")
+volc = volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decreasing=T),], 20), aes(label=Gene))
+ggsave(paste(output, ".edgeR.Volcano.pdf", sep=""), plot=volc, device="pdf")
 
 # DEGsのクラスタリング
 logt <- apply(fittedcount[significant,]+1, c(1,2), log2)
