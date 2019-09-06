@@ -52,7 +52,7 @@ postfix=count.$build
 
 # genes
 ncol=$((n1+n2+2))
-cut -f 1-$ncol $outname.genes.count.$build.txt > $outname.genes.count.$build.temp
+ex "cut -f 1-$ncol $outname.genes.count.$build.txt > $outname.genes.count.$build.temp"
 ex "$R -i=$outname.genes.count.$build.temp    -n=$n -gname=$gname -o=$outname.genes.$postfix    -p=$p -nrowname=2 -ncolskip=1"
 rm $outname.genes.count.$build.temp
 
@@ -68,7 +68,7 @@ for str in genes isoforms; do
     else
 	refFlat=`ls $Ddir/$db/$build/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
     fi
-    
+
     s=""
     # gene info 追加
     for ty in all DEGs upDEGs downDEGs; do
