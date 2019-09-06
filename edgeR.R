@@ -209,17 +209,6 @@ autoplot(prcomp(t(zlog)), shape=F, label=T, label.size=3, data=d$samples, colour
 autoplot(prcomp(t(fittedcount)), shape=F, label=T, label.size=3, data=d$samples, colour = 'group', main="fitted counts")
 dev.off()
 
-### DEGs
-#cat('\nobtain DEGs\n',file=stdout())
-# Exact test (fitしていないデータを利用)
-#result <- exactTest(d)
-#table <- as.data.frame(topTags(result, n = nrow(counts)))
-#is.DEG <- as.logical(table$FDR < p)
-#DEG.names <- rownames(table)[is.DEG]
-#pdf(paste(output, ".MAplot.pdf", sep=""), height=7, width=7)
-#plotSmear(result, de.tags = DEG.names)
-#dev.off()
-
 # 2群の尤度比検定
 tt <- topTags(lrt, sort.by="none", n=nrow(data))
 
@@ -240,6 +229,17 @@ write.table(cnts_sig, file=paste(output, ".edgeR.DEGs.tsv", sep=""), quote=F, se
 write.table(cnts_sig[cnts_sig$logFC > 0,], file=paste(output, ".edgeR.upDEGs.tsv", sep=""), quote=F, sep = "\t",row.names = F, col.names = T)
 write.table(cnts_sig[cnts_sig$logFC < 0,], file=paste(output, ".edgeR.downDEGs.tsv", sep=""), quote=F, sep = "\t",row.names = F, col.names = T)
 
+### MAplot
+cat('\nMA plot\n',file=stdout())
+#pdf(paste(output, ".MAplot.pdf", sep=""), height=7, width=7)
+Data <- cbind(cnts$logCPM, cnts$logFC)
+colnames(Data) <- c("logCPM", "logFC")
+ma = ggplot(Data, aes(logCPM, logFC)) +
+    geom_point(aes(col=significant)) +
+    scale_color_manual(values=c("black", "red")) +
+    ggtitle(paste("MA plot (", gname1, ", ", gname2, ")", sep=""))
+ma
+ggsave(paste(output, ".edgeR.MAplot.pdf", sep=""), device="pdf")
 
 # Volcano plot
 cat('\nmake Volcano plot\n',file=stdout())
@@ -254,13 +254,6 @@ volc = ggplot(volcanoData, aes(logFC, FDR)) +
     ggtitle(paste("Volcano plot (", gname1, ", ", gname2, ")", sep=""))
 volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decreasing=T),], 20), aes(label=Gene))
 ggsave(paste(output, ".edgeR.Volcano.pdf", sep=""), device="pdf")
-#pdf(paste(output, ".edgeR.Volcano.pdf", sep=""), height=7, width=7)
-#volcanoData <- cbind(cnts$logFC, -log10(cnts$FDR))
-#colnames(volcanoData) <- c("logFC", "-log10(FDR)")
-#plot(volcanoData, pch=19)
-#dev.off()
-
-
 
 # DEGsのクラスタリング
 logt <- apply(fittedcount[significant,]+1, c(1,2), log2)
