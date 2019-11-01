@@ -35,13 +35,14 @@ prob=$6
 pwd=$(cd $(dirname $0) && pwd)
 
 mkdir -p log $odir
+Ddir=`$pwd/../script_rnakato/database.sh`
 
 if test $build = "S_pombe" -o $build = "S_cerevisiae"; then
-    index_star=`$pwd/database.sh`/rsem-star-indexes/$build
-    index_rsem=`$pwd/database.sh`/rsem-star-indexes/$build/$build
+    index_star=$Ddir/rsem-star-indexes/$build
+    index_rsem=$Ddir/rsem-star-indexes/$build/$build
 else
-    index_star=`$pwd/database.sh`/rsem-star-indexes/$db-$build
-    index_rsem=`$pwd/database.sh`/rsem-star-indexes/$db-$build/$db-$build
+    index_star=$Ddir/rsem-star-indexes/$db-$build
+    index_rsem=$Ddir/rsem-star-indexes/$db-$build/$db-$build
 fi
 
 if test $readtype = "paired"; then pair="--paired-end"
@@ -75,5 +76,5 @@ $pwd/parse_starlog.pl $odir/$prefix.$build.Log.final.out >> $log
 RSEMdir=$(cd $(dirname $0) && pwd)/../RSEM
 $RSEMdir/rsem-calculate-expression $pair --alignments --estimate-rspd --forward-prob $prob --no-bam-output -p 12 $odir/${prefix}.$build.Aligned.toTranscriptome.out.bam $index_rsem $odir/$prefix.$build
 
-#$RSEMdir/rsem-plot-transcript-wiggles --gene-list --show-unique mmliver_single_quals gene_ids.txt output.pdf 
+#$RSEMdir/rsem-plot-transcript-wiggles --gene-list --show-unique mmliver_single_quals gene_ids.txt output.pdf
 $RSEMdir/rsem-plot-model $odir/$prefix.$build $odir/$prefix.$build.quals.pdf
