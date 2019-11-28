@@ -29,8 +29,8 @@ nrowname <- 1
 ncolskip <- 0
 p <- 0.01
 color <- "blue"
-gname1 <- "groupA"
-gname2 <- "groupB"
+gname1 <- "group1"
+gname2 <- "group2"
 for (each.arg in args) {
     if (grepl('^-i=',each.arg)) {
         arg.split <- strsplit(each.arg,'=',fixed=TRUE)[[1]]
@@ -64,8 +64,8 @@ for (each.arg in args) {
             if (length(sep.vals.split) != 2) {
                 stop('must be specified as -gname=<num1>:<num2>')
             } else {
-                gname1 <- sep.vals.split[1]
-                gname2 <- sep.vals.split[2]
+                gname1 <- paste(gname1, sep.vals.split[1], sep=" ")
+                gname2 <- paste(gname2, sep.vals.split[2], sep=" ")
             }
         }
         else { stop('No value provided for parameter -gname=')}
