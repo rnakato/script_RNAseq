@@ -61,7 +61,7 @@ do
     head=$outname.isoforms.$tp.$build
     echo "add geneID to $head.txt..."
 #    add_genename_fromgtf.pl $head.txt $gtf > $head.addname.txt
-    convert_genename_fromgtf.pl isoforms all $head.txt $gtf 0 > $head.addname.txt
+    convert_genename_fromgtf.pl --type=isoforms -f $head.txt -g $gtf --nline=0 > $head.addname.txt
 
     mv $head.addname.txt $head.txt
 done
@@ -79,7 +79,7 @@ for str in genes isoforms; do
 	head=$outname.$str.$tp.$build
 	echo "add genename to $head.txt..."
 	add_geneinfo_fromRefFlat.pl $str $head.txt $refFlat $nline > $head.temp.txt
-	convert_genename_fromgtf.pl $str all $head.temp.txt $gtf $nline > $head.txt
+	convert_genename_fromgtf.pl --type=$str -f $head.temp.txt -g $gtf --nline=$nline > $head.txt
 	rm $head.temp.txt
     done
 done
