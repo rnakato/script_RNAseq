@@ -62,7 +62,7 @@ if [ "`echo $fastq | grep '.gz'`" ] ; then
     pzip="--readFilesCommand zcat"
 fi
 
-STARdir=$pwd/../STAR/bin/Linux_x86_64_static
+STARdir=$pwd/../binaries/STAR-2.7.3a/bin/Linux_x86_64_static
 
 $STARdir/STAR --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM \
     --runThreadN 12 --outSAMattributes All $pzip \
@@ -73,7 +73,7 @@ log=log/star-$prefix.$build.txt
 echo -en "$prefix\t" > $log
 $pwd/parse_starlog.pl $odir/$prefix.$build.Log.final.out >> $log
 
-RSEMdir=$(cd $(dirname $0) && pwd)/../RSEM
+RSEMdir=$(cd $(dirname $0) && pwd)/../binaries/RSEM-1.3.3/
 $RSEMdir/rsem-calculate-expression $pair --alignments --estimate-rspd --forward-prob $prob --no-bam-output -p 12 $odir/${prefix}.$build.Aligned.toTranscriptome.out.bam $index_rsem $odir/$prefix.$build
 
 #$RSEMdir/rsem-plot-transcript-wiggles --gene-list --show-unique mmliver_single_quals gene_ids.txt output.pdf
