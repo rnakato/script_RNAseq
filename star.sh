@@ -2,7 +2,7 @@
 cmdname=`basename $0`
 function usage()
 {
-    echo "$cmdname [-d outputdir] <single|paired> <output prefix> <fastq> <Ensembl|UCSC> <build> <--forward-prob [0-1]>" 1>&2
+    echo "$cmdname [-d outputdir] <single|paired> <output prefix> <fastq> <Ensembl|UCSC> <build> <--strandedness [none|forward|reverse]>" 1>&2
 }
 
 odir=star
@@ -30,7 +30,7 @@ prefix=$2
 fastq=$3
 db=$4
 build=$5
-prob=$6
+strand=$6
 
 pwd=$(cd $(dirname $0) && pwd)
 
@@ -51,7 +51,7 @@ elif ! test $readtype = "single"; then
   usage
   exit 1
 fi
-if test $prob = "0.5"; then  # unstraned
+if test $strand = "none"; then  # unstraned
     parstr="--outSAMstrandField intronMotif"
     parWig="--outWigStrand Unstranded"
 else          # stranded
@@ -74,7 +74,7 @@ echo -en "$prefix\t" > $log
 $pwd/parse_starlog.pl $odir/$prefix.$build.Log.final.out >> $log
 
 RSEMdir=$(cd $(dirname $0) && pwd)/../binaries/RSEM-1.3.3/
-$RSEMdir/rsem-calculate-expression $pair --alignments --estimate-rspd --forward-prob $prob --no-bam-output -p 12 $odir/${prefix}.$build.Aligned.toTranscriptome.out.bam $index_rsem $odir/$prefix.$build
+$RSEMdir/rsem-calculate-expression $pair --alignments --estimate-rspd --strandedness $strand --no-bam-output -p 12 $odir/${prefix}.$build.Aligned.toTranscriptome.out.bam $index_rsem $odir/$prefix.$build
 
 #$RSEMdir/rsem-plot-transcript-wiggles --gene-list --show-unique mmliver_single_quals gene_ids.txt output.pdf
 $RSEMdir/rsem-plot-model $odir/$prefix.$build $odir/$prefix.$build.quals.pdf
