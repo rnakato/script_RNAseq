@@ -88,7 +88,11 @@ for str in genes isoforms; do
 
     for ty in DEGs upDEGs downDEGs; do
        head=$outname.$str.$postfix.edgeR.$ty
-       cut -f14,16,17 $head.tsv | grep -v chromosome > $head.bed
+       ncol=`head -n1 $head.tsv | awk '{print NF}'`
+       n1=$((ncol-3))
+       n2=$((ncol-4))
+       n3=$((ncol-6))
+       cut -f$n1,$n2,$n3 $head.tsv | grep -v chromosome > $head.bed
     done
 
     csv2xlsx.pl $s -o $outname.$str.$postfix.edgeR.xlsx
