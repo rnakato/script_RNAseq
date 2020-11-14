@@ -32,7 +32,7 @@ build=$4
 str_sed=$5
 
 Ddir=`database.sh`
-gtf=`ls $Ddir/$db/$build/gtf_chrUCSC/*.$build.*.chr.gtf`
+gtf=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gtf`
 
 for str in genes isoforms
 do
@@ -70,17 +70,17 @@ done
 for str in genes isoforms; do
     if test $str = "genes"; then
 	nline=0
-	refFlat=`ls $Ddir/$db/$build/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
+	refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
     else
 	nline=1
-	refFlat=`ls $Ddir/$db/$build/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
+	refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
     fi
     for tp in count TPM; do
-	head=$outname.$str.$tp.$build
-	echo "add genename to $head.txt..."
-	add_geneinfo_fromRefFlat.pl $str $head.txt $refFlat $nline > $head.temp.txt
-	convert_genename_fromgtf.pl --type=$str -f $head.temp.txt -g $gtf --nline=$nline > $head.txt
-	rm $head.temp.txt
+	    head=$outname.$str.$tp.$build
+	    echo "add genename to $head.txt..."
+	    add_geneinfo_fromRefFlat.pl $str $head.txt $refFlat $nline > $head.temp.txt
+	    convert_genename_fromgtf.pl --type=$str -f $head.temp.txt -g $gtf --nline=$nline > $head.txt
+	    rm $head.temp.txt
     done
 done
 

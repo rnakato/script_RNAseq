@@ -38,7 +38,6 @@ n1=$(cut -d':' -f1 <<<${n})
 n2=$(cut -d':' -f2 <<<${n})
 
 Ddir=`database.sh`
-gtf=`ls $Ddir/$db/$build/gtf_chrUCSC/*.$build.*.chr.gtf`
 
 Rdir=$(cd $(dirname $0) && pwd)
 R="Rscript $Rdir/edgeR.R"
@@ -64,18 +63,18 @@ rm $outname.isoforms.count.$build.temp
 
 for str in genes isoforms; do
     if test $str = "genes"; then
-	refFlat=`ls $Ddir/$db/$build/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
+	    refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
     else
-	refFlat=`ls $Ddir/$db/$build/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
+	    refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
     fi
 
     s=""
     # gene info 追加
     for ty in all DEGs upDEGs downDEGs; do
-	head=$outname.$str.$postfix.edgeR.$ty
-	add_geneinfo_fromRefFlat.pl $str $head.tsv $refFlat 0 > $head.temp
-	mv $head.temp $head.tsv
-	s="$s -i $head.tsv -n fitted-$str-$ty"
+	    head=$outname.$str.$postfix.edgeR.$ty
+	    add_geneinfo_fromRefFlat.pl $str $head.tsv $refFlat 0 > $head.temp
+	    mv $head.temp $head.tsv
+	    s="$s -i $head.tsv -n fitted-$str-$ty"
     done
 
     # short gene, nonsense geneを除去 (all除く)
@@ -86,6 +85,11 @@ for str in genes isoforms; do
 	    mv $head.temp $head.tsv
 	done
     fi
+
+    for ty in DEGs upDEGs downDEGs; do
+       head=$outname.$str.$postfix.edgeR.$ty
+       cut -f14,16,17 $head.tsv | grep -v chromosome > $head.bed
+    done
 
     csv2xlsx.pl $s -o $outname.$str.$postfix.edgeR.xlsx
 done
