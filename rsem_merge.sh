@@ -2,7 +2,7 @@
 cmdname=`basename $0`
 function usage()
 {
-    echo "$cmdname <files> <output> <Ensembl|UCSC> <build> <strings for sed>" 1>&2
+    echo "$cmdname <files> <output> <Ensembl|UCSC> <build> <gtf> <strings for sed>" 1>&2
 }
 
 name=0
@@ -20,7 +20,7 @@ do
 done
 shift $((OPTIND - 1))
 
-if [ $# -ne 5 ]; then
+if [ $# -ne 6 ]; then
   usage
   exit 1
 fi
@@ -29,10 +29,11 @@ files=$1
 outname=$2
 db=$3
 build=$4
-str_sed=$5
+gtf=$5
+str_sed=$6
 
 Ddir=`database.sh`
-gtf=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gtf`
+#gtf=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gtf`
 
 for str in genes isoforms
 do
@@ -40,17 +41,17 @@ do
     for prefix in $files; do s="$s $prefix.$build.$str.results"; done
 
     for tp in count TPM; do
-	head=$outname.$str.$tp.$build
-	echo "generate $head.txt..."
-	rsem-generate-data-matrix-modified $tp $s > $head.txt
+	    head=$outname.$str.$tp.$build
+	    echo "generate $head.txt..."
+	    rsem-generate-data-matrix-modified $tp $s > $head.txt
 
-	# 余計な文字列の除去
-	cat $head.txt | sed -e 's/.'$build'.'$str'.results//g' > $head.temp
-	mv $head.temp $head.txt
-	for rem in $str_sed; do
-	    cat $head.txt | sed -e 's/'$rem'//g' > $head.temp
+	    # 余計な文字列の除去
+	    cat $head.txt | sed -e 's/.'$build'.'$str'.results//g' > $head.temp
 	    mv $head.temp $head.txt
-	done
+	    for rem in $str_sed; do
+	        cat $head.txt | sed -e 's/'$rem'//g' > $head.temp
+	        mv $head.temp $head.txt
+	    done
 
     done
 done
@@ -67,13 +68,15 @@ do
 done
 
 # IDから遺伝子情報を追加
+
+if test $db = "Ensembl"; then
 for str in genes isoforms; do
     if test $str = "genes"; then
-	nline=0
-	refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
+	    nline=0
+	    refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
     else
-	nline=1
-	refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
+	    nline=1
+	    refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
     fi
     for tp in count TPM; do
 	    head=$outname.$str.$tp.$build
@@ -83,6 +86,7 @@ for str in genes isoforms; do
 	    rm $head.temp.txt
     done
 done
+fi
 
 # xlsxファイル作成
 echo "generate xlsx..."
