@@ -69,14 +69,15 @@ done
 
 # IDから遺伝子情報を追加
 
+d=`echo $build | sed -e 's/.proteincoding//g'`
 if test $db = "Ensembl"; then
-for str in genes isoforms; do
+    for str in genes isoforms; do
     if test $str = "genes"; then
 	    nline=0
-	    refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
+	    refFlat=`ls $Ddir/$db/$d/release*/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
     else
 	    nline=1
-	    refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
+	    refFlat=`ls $Ddir/$db/$d/release*/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
     fi
     for tp in count TPM; do
 	    head=$outname.$str.$tp.$build
