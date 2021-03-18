@@ -61,11 +61,12 @@ cut -f 1-$ncol $outname.isoforms.count.$build.txt > $outname.isoforms.count.$bui
 ex "$R -i=$outname.isoforms.count.$build.temp -n=$n -gname=$gname -o=$outname.isoforms.$postfix -p=$p -nrowname=3 -ncolskip=2 -color=orange"
 rm $outname.isoforms.count.$build.temp
 
+d=`echo $build | sed -e 's/.proteincoding//g'`
 for str in genes isoforms; do
     if test $str = "genes"; then
-	    refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
+        refFlat=`ls $Ddir/$db/$d/release*/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
     else
-	    refFlat=`ls $Ddir/$db/$build/release101/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
+        refFlat=`ls $Ddir/$db/$d/release*/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
     fi
 
     s=""
