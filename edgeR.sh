@@ -64,9 +64,11 @@ rm $outname.isoforms.count.$build.temp
 d=`echo $build | sed -e 's/.proteincoding//g'`
 for str in genes isoforms; do
     if test $str = "genes"; then
-        refFlat=`ls $Ddir/$db/$d/release*/gtf_chrUCSC/*.$build.*.chr.gene.refFlat`
+#        nline=0
+        refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.gene.refFlat | tail -n1`
     else
-        refFlat=`ls $Ddir/$db/$d/release*/gtf_chrUCSC/*.$build.*.chr.transcript.refFlat`
+#        nline=1
+        refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.transcript.refFlat | tail -n1`
     fi
 
     s=""
