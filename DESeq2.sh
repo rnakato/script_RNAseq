@@ -56,7 +56,7 @@ ex "$R -i=$outname.genes.$postfix.temp -n=$n -gname=$gname -o=$outname.genes.$po
 rm $outname.genes.$postfix.temp
 
 # isoforms
-ncol=$((n1+n2+3))
+ncol=$((n1+n2+2))
 cut -f 1-$ncol $outname.isoforms.$postfix.txt > $outname.isoforms.$postfix.temp
 ex "$R -i=$outname.isoforms.$postfix.temp -n=$n -gname=$gname -o=$outname.isoforms.$postfix -p=$p -nrowname=2 -ncolskip=1"
 rm $outname.isoforms.$postfix.temp
@@ -69,7 +69,7 @@ for str in genes isoforms; do
 #        refFlat=`ls $Ddir/Ensembl/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.transcript.refFlat | tail -n1`
 #    fi
 
- #   s=""
+    s=""
     # gene info 追加
 #    for ty in all DEGs upDEGs downDEGs; do
 #            head=$outname.$str.$postfix.DESeq2.$ty
@@ -96,5 +96,10 @@ for str in genes isoforms; do
        cut -f$n1,$n2,$n3 $head.tsv | grep -v chromosome > $head.bed
     done
 
+    s=""
+    for ty in all DEGs upDEGs downDEGs; do
+        head=$outname.$str.$postfix.DESeq2.$ty
+        s="$s -i $head.tsv -n fitted-$str-$ty"
+    done
     csv2xlsx.pl $s -o $outname.$str.$postfix.DESeq2.xlsx
 done
