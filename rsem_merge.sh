@@ -62,17 +62,17 @@ do
 done
 
 # isoformのファイルにgene idを追加
-if test $db = "Ensembl"; then
-    for tp in count TPM
-    do
-        head=$outname.isoforms.$tp.$build
-        echo "add geneID to $head.txt..."
+#if test $db = "Ensembl"; then
+#    for tp in count TPM
+#    do
+#        head=$outname.isoforms.$tp.$build
+#        echo "add geneID to $head.txt..."
         #    add_genename_fromgtf.pl $head.txt $gtf > $head.addname.txt
-        convert_genename_fromgtf.pl --type=isoforms -f $head.txt -g $gtf --nline=0 > $head.addname.txt
+#        convert_genename_fromgtf.pl --type=isoforms -f $head.txt -g $gtf --nline=0 > $head.addname.txt
 
-        mv $head.addname.txt $head.txt
-    done
-fi
+#        mv $head.addname.txt $head.txt
+#    done
+#fi
 
 # IDから遺伝子情報を追加
 
@@ -83,7 +83,7 @@ if test $db = "Ensembl"; then
 	    nline=0
 	    refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.gene.refFlat | tail -n1`
     else
-	    nline=1
+	    nline=0
 	    refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.transcript.refFlat | tail -n1`
     fi
     for tp in count TPM; do
@@ -101,8 +101,8 @@ echo "generate xlsx..."
 s=""
 for str in $strs; do
     for tp in count TPM; do
-	head=$outname.$str.$tp.$build
-	s="$s -i $head.txt -n $str-$tp"
+	    head=$outname.$str.$tp.$build
+	    s="$s -i $head.txt -n $str-$tp"
     done
 done
 

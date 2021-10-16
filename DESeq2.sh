@@ -2,9 +2,9 @@
 cmdname=`basename $0`
 function usage()
 {
-    echo "DESeq2.sh [-a] <Matrix> <build> <num of reps> <groupname> <FDR> <gtf>" 1>&2
+    echo "DESeq2.sh <Matrix> <build> <num of reps> <groupname> <FDR> <gtf>" 1>&2
     echo "  Example:" 1>&2
-    echo "  DESeq2.sh -a star/Matrix GRCh38 2:2 WT:KD 0.05 GRCh38.gtf" 1>&2
+    echo "  DESeq2.sh star/Matrix GRCh38 2:2 WT:KD 0.05 GRCh38.gtf" 1>&2
 }
 
 all=0
@@ -58,9 +58,8 @@ rm $outname.genes.$postfix.temp
 # isoforms
 ncol=$((n1+n2+3))
 cut -f 1-$ncol $outname.isoforms.$postfix.txt > $outname.isoforms.$postfix.temp
-ex "$R -i=$outname.isoforms.$postfix.temp -n=$n -gname=$gname -o=$outname.isoforms.$postfix -p=$p -nrowname=3 -ncolskip=2"
+ex "$R -i=$outname.isoforms.$postfix.temp -n=$n -gname=$gname -o=$outname.isoforms.$postfix -p=$p -nrowname=2 -ncolskip=1"
 rm $outname.isoforms.$postfix.temp
-
 
 #d=`echo $build | sed -e 's/.proteincoding//g'`
 for str in genes isoforms; do
@@ -80,13 +79,13 @@ for str in genes isoforms; do
   #  done
 
     # short gene, nonsense geneを除去 (all除く)
-    if test $all = 0; then
-        for ty in DEGs upDEGs downDEGs; do
-            head=$outname.$str.$postfix.DESeq2.$ty
-            filter_short_or_nonsense_genes.pl $head.tsv -l 1000 > $head.temp
-            mv $head.temp $head.tsv
-        done
-    fi
+#    if test $all = 0; then
+#        for ty in DEGs upDEGs downDEGs; do
+#            head=$outname.$str.$postfix.DESeq2.$ty
+#            filter_short_or_nonsense_genes.pl $head.tsv -l 1000 > $head.temp
+#            mv $head.temp $head.tsv
+#        done
+#    fi
 
     for ty in DEGs upDEGs downDEGs; do
        head=$outname.$str.$postfix.DESeq2.$ty
