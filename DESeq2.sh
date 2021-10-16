@@ -2,17 +2,17 @@
 cmdname=`basename $0`
 function usage()
 {
-    echo "DESeq2.sh [-n] <Matrix> <build> <num of reps> <groupname> <FDR> <gtf>" 1>&2
+    echo "DESeq2.sh [-a] <Matrix> <build> <num of reps> <groupname> <FDR> <gtf>" 1>&2
     echo "  Example:" 1>&2
-    echo "  DESeq2.sh -n star/Matrix GRCh38 2:2 WT:KD 0.05 GRCh38.gtf" 1>&2
+    echo "  DESeq2.sh -a star/Matrix GRCh38 2:2 WT:KD 0.05 GRCh38.gtf" 1>&2
 }
 
-name=0
-while getopts n option
+all=0
+while getopts a option
 do
     case ${option} in
-        n)
-            name=1
+        a)
+            all=1
             ;;
         *)
             usage
@@ -34,44 +34,68 @@ gname=$4
 p=$5
 gtf=$6
 
+n1=$(cut -d':' -f1 <<<${n})
+n2=$(cut -d':' -f2 <<<${n})
+
 Rdir=$(cd $(dirname $0) && pwd)
 R="Rscript $Rdir/DESeq2.R"
+
+Ddir=`database.sh`
 
 ex(){
     echo $1
     eval $1
 }
 
-convertname(){
-    str=$1
-    nline=$2
-    s=""
-    for ty in all DEGs upDEGs downDEGs; do
-	head=$outname.$str.count.$build.DESeq2.$ty
-	cat $head.csv | sed 's/,/\t/g' > $head.csv.temp
-	mv $head.csv.temp $head.csv
-	if test $str = "genes"; then
-	    convert_genename_fromgtf.pl genes all $head.csv $gtf $nline > $head.name.csv
-	else
-	    convert_genename_fromgtf.pl isoforms all $head.csv $gtf $nline > $head.name.csv
-	fi
-	s="$s -i $head.name.csv -n $str-$ty"
-    done
-    csv2xlsx.pl $s -o $outname.$str.count.$build.DESeq2.name.xlsx
-}
+postfix=count.$build
 
-ex "$R -i=$outname.genes.count.$build.txt    -n=$n -gname=$gname -o=$outname.genes.count.$build    -p=$p"
-ex "$R -i=$outname.isoforms.count.$build.txt -n=$n -gname=$gname -o=$outname.isoforms.count.$build -p=$p -nrowname=2"
+# genes
+ncol=$((n1+n2+2))
+ex "cut -f 1-$ncol $outname.genes.$postfix.txt > $outname.genes.$postfix.temp"
+ex "$R -i=$outname.genes.$postfix.temp -n=$n -gname=$gname -o=$outname.genes.$postfix -p=$p -nrowname=2 -ncolskip=1"
+rm $outname.genes.$postfix.temp
 
+# isoforms
+ncol=$((n1+n2+3))
+cut -f 1-$ncol $outname.isoforms.$postfix.txt > $outname.isoforms.$postfix.temp
+ex "$R -i=$outname.isoforms.$postfix.temp -n=$n -gname=$gname -o=$outname.isoforms.$postfix -p=$p -nrowname=3 -ncolskip=2"
+rm $outname.isoforms.$postfix.temp
+
+
+#d=`echo $build | sed -e 's/.proteincoding//g'`
 for str in genes isoforms; do
-    s=""
-    for ty in all DEGs upDEGs downDEGs; do
-	s="$s -i $outname.$str.count.$build.DESeq2.$ty.csv -n $str-$ty"
-    done
-    csv2xlsx.pl $s -o $outname.$str.count.$build.DESeq2.xlsx -d,
-done
+#    if test $str = "genes"; then
+#        refFlat=`ls $Ddir/Ensembl/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.gene.refFlat | tail -n1`
+#    else
+#        refFlat=`ls $Ddir/Ensembl/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.transcript.refFlat | tail -n1`
+#    fi
 
-if test $name -eq 1; then
-    convertname genes 0
-    convertname isoforms 0
-fi
+ #   s=""
+    # gene info 追加
+#    for ty in all DEGs upDEGs downDEGs; do
+#            head=$outname.$str.$postfix.DESeq2.$ty
+#            add_geneinfo_fromRefFlat.pl $str $head.tsv $refFlat 0 > $head.temp
+#            mv $head.temp $head.tsv
+  #          s="$s -i $head.tsv -n fitted-$str-$ty"
+  #  done
+
+    # short gene, nonsense geneを除去 (all除く)
+    if test $all = 0; then
+        for ty in DEGs upDEGs downDEGs; do
+            head=$outname.$str.$postfix.DESeq2.$ty
+            filter_short_or_nonsense_genes.pl $head.tsv -l 1000 > $head.temp
+            mv $head.temp $head.tsv
+        done
+    fi
+
+    for ty in DEGs upDEGs downDEGs; do
+       head=$outname.$str.$postfix.DESeq2.$ty
+       ncol=`head -n1 $head.tsv | awk '{print NF}'`
+       n1=$((ncol-2))
+       n2=$((ncol-3))
+       n3=$((ncol-5))
+       cut -f$n1,$n2,$n3 $head.tsv | grep -v chromosome > $head.bed
+    done
+
+    csv2xlsx.pl $s -o $outname.$str.$postfix.DESeq2.xlsx
+done
