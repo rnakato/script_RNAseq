@@ -215,7 +215,7 @@ write.table(resSig,     file=paste(output, ".DESeq2.DEGs.tsv", sep=""), quote=F,
 write.table(resSig[resSig$log2FoldChange>0,], file=paste(output, ".DESeq2.upDEGs.tsv", sep=""), quote=F, sep="\t",row.names = F, col.names = T)
 write.table(resSig[resSig$log2FoldChange<0,], file=paste(output, ".DESeq2.downDEGs.tsv", sep=""), quote=F, sep="\t",row.names = F, col.names = T)
 
-pdf(paste(output, ".topDEGs.pdf", sep=""), height=14, width=14)
+pdf(paste(output, ".DESeq2.topDEGs.pdf", sep=""), height=14, width=14)
 par(mfrow=c(3,3))
 topDEGsid <- order(res$padj, decreasing=F)[1:9]
 for(i in topDEGsid) {
@@ -241,7 +241,7 @@ select <- order(rowMeans(counts(dds,normalized=TRUE)), decreasing=TRUE)[1:20]
 
 nt <- normTransform(dds) # log2(x+1)
 df <- as.data.frame(colData(dds)[,c("group","group")])
-pdf(paste(output, ".HighlyExpressedGenes.pdf", sep=""), height=7, width=7)
+pdf(paste(output, ".DESeq2.HighlyExpressedGenes.pdf", sep=""), height=7, width=7)
 #par(mfrow=c(1,2))
 #pheatmap(assay(nt)[select,], cluster_rows=F, show_rownames=T, cluster_cols=F, annotation_col=df)
 pheatmap(vsdMat[select,], cluster_rows=F, show_rownames=T, cluster_cols=F, annotation_col=df)
@@ -254,12 +254,12 @@ sampleDistMatrix <- as.matrix(sampleDists)
 #rownames(sampleDistMatrix) <- paste(rld$condition, rld$type, sep="-")
 colnames(sampleDistMatrix) <- NULL
 colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
-pdf(paste(output, ".sampleClustering.pdf", sep=""), height=7, width=8)
+pdf(paste(output, ".DESeq2.sampleClustering.pdf", sep=""), height=7, width=8)
 pheatmap(sampleDistMatrix, clustering_distance_rows=sampleDists, clustering_distance_cols=sampleDists, col=colors)
 dev.off()
 
 # PCA plot
-pdf(paste(output, ".samplePCA.pdf", sep=""), height=7, width=7)
+pdf(paste(output, ".DESeq2.samplePCA.pdf", sep=""), height=7, width=7)
 plotPCA(vsd, intgroup=c("group"))
 dev.off()
 
