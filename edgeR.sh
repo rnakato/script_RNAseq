@@ -48,52 +48,51 @@ ex(){
 }
 
 postfix=count.$build
+ex "$R -i=$outname.genes.$postfix.txt -n=$n -gname=$gname -o=$outname.genes.$postfix -p=$p -nrowname=2 -ncolskip=1"
+ex "$R -i=$outname.isoforms.$postfix.txt -n=$n -gname=$gname -o=$outname.isoforms.$postfix -p=$p -nrowname=2 -ncolskip=1 -color=orange"
 
-# genes
-ncol=$((n1+n2+2))
-ex "cut -f 1-$ncol $outname.genes.count.$build.txt > $outname.genes.count.$build.temp"
-ex "$R -i=$outname.genes.count.$build.temp    -n=$n -gname=$gname -o=$outname.genes.$postfix    -p=$p -nrowname=2 -ncolskip=1"
-rm $outname.genes.count.$build.temp
-
-# isoforms
-ncol=$((n1+n2+3))
-cut -f 1-$ncol $outname.isoforms.count.$build.txt > $outname.isoforms.count.$build.temp
-ex "$R -i=$outname.isoforms.count.$build.temp -n=$n -gname=$gname -o=$outname.isoforms.$postfix -p=$p -nrowname=3 -ncolskip=2 -color=orange"
-rm $outname.isoforms.count.$build.temp
-
-d=`echo $build | sed -e 's/.proteincoding//g'`
+#d=`echo $build | sed -e 's/.proteincoding//g'`
 for str in genes isoforms; do
-    if test $str = "genes"; then
-        refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.gene.refFlat | tail -n1`
-    else
-        refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.transcript.refFlat | tail -n1`
-    fi
+#    if test $str = "genes"; then
+#        refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.gene.refFlat | tail -n1`
+#    else
+#        refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.transcript.refFlat | tail -n1`
+#    fi
 
-    s=""
+#    s=""
     # gene info 追加
-    for ty in all DEGs upDEGs downDEGs; do
-	    head=$outname.$str.$postfix.edgeR.$ty
-	    add_geneinfo_fromRefFlat.pl $str $head.tsv $refFlat 0 > $head.temp
-	    mv $head.temp $head.tsv
-	    s="$s -i $head.tsv -n fitted-$str-$ty"
-    done
+#    for ty in all DEGs upDEGs downDEGs; do
+#	    head=$outname.$str.$postfix.edgeR.$ty
+#	    add_geneinfo_fromRefFlat.pl $str $head.tsv $refFlat 0 > $head.temp
+#	    mv $head.temp $head.tsv
+#	    s="$s -i $head.tsv -n fitted-$str-$ty"
+#    done
 
     # short gene, nonsense geneを除去 (all除く)
     if test $all = 0; then
-	for ty in DEGs upDEGs downDEGs; do
-	    head=$outname.$str.$postfix.edgeR.$ty
-	    filter_short_or_nonsense_genes.pl $head.tsv -l 1000 > $head.temp
-	    mv $head.temp $head.tsv
-	done
+	    for ty in DEGs upDEGs downDEGs; do
+	        head=$outname.$str.$postfix.edgeR.$ty
+	        filter_short_or_nonsense_genes.pl $head.tsv -l 1000 > $head.temp
+	        mv $head.temp $head.tsv
+	    done
     fi
 
     for ty in DEGs upDEGs downDEGs; do
        head=$outname.$str.$postfix.edgeR.$ty
        ncol=`head -n1 $head.tsv | awk '{print NF}'`
-       n1=$((ncol-3))
-       n2=$((ncol-4))
-       n3=$((ncol-6))
-       cut -f$n1,$n2,$n3 $head.tsv | grep -v chromosome > $head.bed
+       n1=$((ncol-6))
+       n2=$((ncol-5))
+       n3=$((ncol-4))
+       n4=$((ncol-3))
+       n5=$((ncol-2))
+       cut -f$n1,$n3,$n4 $head.tsv | grep -v chromosome > $head.bed
+       grep -v chromosome $head.tsv | awk 'BEGIN { OFS="\t" } {print $'$n1', $'$n3', $'$n4', $2, $'$n5', $'$n2' }' > $head.bed6
+    done
+
+    s=""
+    for ty in all DEGs upDEGs downDEGs; do
+        head=$outname.$str.$postfix.edgeR.$ty
+        s="$s -i $head.tsv -n fitted-$str-$ty"
     done
 
     csv2xlsx.pl $s -o $outname.$str.$postfix.edgeR.xlsx

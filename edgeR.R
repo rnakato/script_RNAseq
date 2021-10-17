@@ -127,18 +127,25 @@ data <- read.table(filename, header=F, row.names=nrowname, sep="\t")
 colnames(data) <- unlist(data[1,])   # ヘッダ文字化け対策 header=Tで読み込むと記号が.になる
 data <- data[-1,]
 
-if(ncolskip==1){
+first = dim(data)[2] - 5
+last = dim(data)[2]
+annotation <- data[,first:last]
+data <- data[,-first:-last]
+
+if (ncolskip==1) {
     data[,-1] <- lapply(data[,-1], function(x) as.numeric(as.character(x)))
+    annotation <- subset(annotation,rowSums(data[,-1])!=0)
     data <- subset(data,rowSums(data[,-1])!=0)
     genename <- data[,1]
     data <- data[,-1]
-}else if(ncolskip==2){
+} else if(ncolskip==2) {
     data[,-1:-2] <- lapply(data[,-1:-2], function(x) as.numeric(as.character(x)))
+    annotation <- subset(annotation,rowSums(data[,-1:-2])!=0)
     data <- subset(data,rowSums(data[,-1:-2])!=0)
     genename <- data[,1:2]
     colnames(genename) <- c('genename','id')
     data <- data[,-1:-2]
-}else{
+} else {
     data <- subset(data,rowSums(data)!=0)
 }
 
@@ -217,9 +224,9 @@ tt <- topTags(lrt, sort.by="none", n=nrow(data))
 
 ## normalize後のfitted valueを表示
 if(ncolskip==0){
-	cnts <- cbind(rownames(lrt$fitted.values), fittedcount_norm, tt$table)
+	cnts <- cbind(rownames(lrt$fitted.values), fittedcount_norm, tt$table, annotation)
 }else{
-	cnts <- cbind(rownames(lrt$fitted.values), genename, fittedcount_norm, tt$table)
+	cnts <- cbind(rownames(lrt$fitted.values), genename, fittedcount_norm, tt$table, annotation)
 }
 
 colnames(cnts)[1] <- "Ensembl ID"

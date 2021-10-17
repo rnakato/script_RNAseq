@@ -113,13 +113,20 @@ data <- read.table(filename, header=F, row.names=nrowname, sep="\t")
 colnames(data) <- unlist(data[1,])   # ヘッダ文字化け対策 header=Tで読み込むと記号が.になる
 data <- data[-1,]
 
+first = dim(data)[2] - 5
+last = dim(data)[2]
+annotation <- data[,first:last]
+data <- data[,-first:-last]
+
 if (ncolskip==1) {
     data[,-1] <- lapply(data[,-1], function(x) as.numeric(as.character(x)))
+    annotation <- subset(annotation,rowSums(data[,-1])!=0)
     data <- subset(data,rowSums(data[,-1])!=0)
     genename <- data[,1]
     data <- data[,-1]
 } else if (ncolskip==2) {
     data[,-1:-2] <- lapply(data[,-1:-2], function(x) as.numeric(as.character(x)))
+    annotation <- subset(annotation,rowSums(data[,-1:-2])!=0)
     data <- subset(data,rowSums(data[,-1:-2])!=0)
     genename <- data[,1:2]
     colnames(genename) <- c('genename','id')
@@ -182,7 +189,7 @@ head(assay(vsd), 3)
 vsdMat <- assay(vsd)
 
 
-cnts <- cbind(rownames(counts_norm), genename, counts_norm, vsdMat, res)
+cnts <- cbind(rownames(counts_norm), genename, counts_norm, vsdMat, res, annotation)
 colnames(cnts)[1] <- "Gene id"
 #cnts_vsd <- cbind(rownames(vsdMat), vsdMat, res)
 
