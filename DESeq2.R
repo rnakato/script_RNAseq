@@ -1,7 +1,7 @@
 # https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
 
 print.usage <- function() {
-	cat('\nUsage: Rscript edgeR.R <options>\n',file=stderr())
+	cat('\nUsage: Rscript DESeq2.R <options>\n',file=stderr())
 	cat('   MANDATORY ARGUMENTS\n',file=stderr())
 	cat('      -i=<input file>  , input file (RSEM gene/transcript file, estimated count) \n',file=stderr())
 	cat('      -n=<num1>:<num2> , num of replicates for each group \n',file=stderr())
@@ -177,7 +177,7 @@ volc = ggplot(volcanoData, aes(logFC, FDR)) +
     scale_color_manual(values=c("black", "red")) +
     ggtitle(paste("Volcano plot (", gname1, ", ", gname2, ")", sep=""))
 volc = volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decreasing=T),], 20), aes(label=Gene))
-ggsave(paste(output, ".edgeR.Volcano.pdf", sep=""), plot=volc, device="pdf")
+ggsave(paste(output, ".DESeq2.Volcano.pdf", sep=""), plot=volc, device="pdf")
 
 ## ----log+1よりも頑健な補正法
 vsd <- vst(dds, blind=FALSE)
