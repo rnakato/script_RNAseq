@@ -18,7 +18,6 @@ tmpfile1=$(mktemp)
 tmpfile2=$(mktemp)
 
 i_max=$(($max/100))
-echo $i_max
 
 for i in $(seq 1 $i_max)
 do
