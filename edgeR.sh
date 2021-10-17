@@ -51,23 +51,7 @@ postfix=count.$build
 ex "$R -i=$outname.genes.$postfix.txt -n=$n -gname=$gname -o=$outname.genes.$postfix -p=$p -nrowname=2 -ncolskip=1"
 ex "$R -i=$outname.isoforms.$postfix.txt -n=$n -gname=$gname -o=$outname.isoforms.$postfix -p=$p -nrowname=2 -ncolskip=1 -color=orange"
 
-#d=`echo $build | sed -e 's/.proteincoding//g'`
 for str in genes isoforms; do
-#    if test $str = "genes"; then
-#        refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.gene.refFlat | tail -n1`
-#    else
-#        refFlat=`ls $Ddir/$db/$d/release1*/gtf_chrUCSC/*.$build.1*.chr.transcript.refFlat | tail -n1`
-#    fi
-
-#    s=""
-    # gene info 追加
-#    for ty in all DEGs upDEGs downDEGs; do
-#	    head=$outname.$str.$postfix.edgeR.$ty
-#	    add_geneinfo_fromRefFlat.pl $str $head.tsv $refFlat 0 > $head.temp
-#	    mv $head.temp $head.tsv
-#	    s="$s -i $head.tsv -n fitted-$str-$ty"
-#    done
-
     # short gene, nonsense geneを除去 (all除く)
     if test $all = 0; then
 	    for ty in DEGs upDEGs downDEGs; do
