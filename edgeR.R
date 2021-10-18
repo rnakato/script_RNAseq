@@ -159,7 +159,6 @@ dim(counts)
 
 ### omit 0 rows
 cat('\ndim(', filename, ') after omitting non-expressed transcripts\n',file=stdout())
-#counts <- subset(counts,rowSums(counts)!=0)
 dim(counts)
 
 ### log and z_score
@@ -177,12 +176,21 @@ d <- calcNormFactors(d)  # TMM norm factor
 d$samples$scaling_factor = d$samples$lib.size * d$samples$norm.factors / mean(d$samples$lib.size)  # fittedcount補正係数
 d$samples
 
-d <- estimateGLMCommonDisp(d, design)  # variance  μ(1 + μφ)  for all genes
-d <- estimateGLMTrendedDisp(d, design)
-d <- estimateGLMTagwiseDisp(d, design) # variance  μ(1 + μφ)  for each gene
-fit <- glmFit(d, design)
-lrt <- glmLRT(fit, coef = 2)
-fittedcount <- lrt$fitted.values
+d <- estimateDisp(d, design)
+#d <- estimateGLMCommonDisp(d, design)  # variance  μ(1 + μφ)  for all genes
+#d <- estimateGLMTrendedDisp(d, design)
+#d <- estimateGLMTagwiseDisp(d, design) # variance  μ(1 + μφ)  for each gene
+
+fit <- glmQLFit(d, design)
+qlf <- glmQLFTest(fit, coef=2)
+fittedcount <- qlf$fitted.values
+tt <- topTags(qlf, sort.by="none", n=nrow(data))
+
+#fit <- glmFit(d, design)
+#lrt <- glmLRT(fit, coef = 2)
+#tt <- topTags(lrt, sort.by="none", n=nrow(data))
+#fittedcount <- lrt$fitted.values
+
 fittedcount_norm <- t(t(fittedcount) / d$samples$scaling_factor)
 
 pdf(paste(output, ".edgeR.BCV-MDS.pdf", sep=""), height=7, width=14)
@@ -219,14 +227,11 @@ autoplot(prcomp(t(zlog)), shape=F, label=T, label.size=3, data=d$samples, colour
 autoplot(prcomp(t(fittedcount_norm)), shape=F, label=T, label.size=3, data=d$samples, colour = 'group', main="normalized fitted counts")
 dev.off()
 
-# 2群の尤度比検定
-tt <- topTags(lrt, sort.by="none", n=nrow(data))
-
 ## normalize後のfitted valueを表示
 if(ncolskip==0){
-	cnts <- cbind(rownames(lrt$fitted.values), fittedcount_norm, tt$table, annotation)
+	cnts <- cbind(rownames(fittedcount), fittedcount_norm, tt$table, annotation)
 }else{
-	cnts <- cbind(rownames(lrt$fitted.values), genename, fittedcount_norm, tt$table, annotation)
+	cnts <- cbind(rownames(fittedcount), genename, fittedcount_norm, tt$table, annotation)
 }
 
 colnames(cnts)[1] <- "Ensembl ID"

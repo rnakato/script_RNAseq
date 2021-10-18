@@ -127,18 +127,25 @@ data <- read.table(filename, header=F, row.names=nrowname, sep="\t")
 colnames(data) <- unlist(data[1,])   # ヘッダ文字化け対策 header=Tで読み込むと記号が.になる
 data <- data[-1,]
 
-if(ncolskip==1){
+first = dim(data)[2] - 5
+last = dim(data)[2]
+annotation <- data[,first:last]
+data <- data[,-first:-last]
+
+if (ncolskip==1) {
     data[,-1] <- lapply(data[,-1], function(x) as.numeric(as.character(x)))
+    annotation <- subset(annotation,rowSums(data[,-1])!=0)
     data <- subset(data,rowSums(data[,-1])!=0)
     genename <- data[,1]
     data <- data[,-1]
-}else if(ncolskip==2){
+} else if(ncolskip==2) {
     data[,-1:-2] <- lapply(data[,-1:-2], function(x) as.numeric(as.character(x)))
+    annotation <- subset(annotation,rowSums(data[,-1:-2])!=0)
     data <- subset(data,rowSums(data[,-1:-2])!=0)
     genename <- data[,1:2]
     colnames(genename) <- c('genename','id')
     data <- data[,-1:-2]
-}else{
+} else {
     data <- subset(data,rowSums(data)!=0)
 }
 
@@ -167,13 +174,22 @@ colnames(zlog) <- colnames(logcounts)
 library(edgeR)
 d <- DGEList(counts = counts, group = group)
 d <- calcNormFactors(d)  # TMM norm factor
+d$samples$scaling_factor = d$samples$lib.size * d$samples$norm.factors / mean(d$samples$lib.size)  # fittedcount補正係数
 d$samples
+
+#d <- estimateDisp(d, design)
 d <- estimateGLMCommonDisp(d, design)  # variance  μ(1 + μφ)  for all genes
 d <- estimateGLMTrendedDisp(d, design)
 d <- estimateGLMTagwiseDisp(d, design) # variance  μ(1 + μφ)  for each gene
+
+#fit <- glmQLFit(d, design)
+#qlf <- glmQLFTest(fit, coef=2)
+#tt <- topTags(qlf, sort.by="none", n=nrow(data))
+
 fit <- glmFit(d, design)
 lrt <- glmLRT(fit, coef = 2)
 fittedcount <- lrt$fitted.values
+fittedcount_norm <- t(t(fittedcount) / d$samples$scaling_factor)
 
 pdf(paste(output, ".edgeR.BCV-MDS.pdf", sep=""), height=7, width=14)
 par(mfrow=c(1,2))
@@ -206,16 +222,17 @@ pdf(paste(output, ".samplePCA.pdf", sep=""), height=7, width=7)
 autoplot(prcomp(t(counts)), shape=F, label=T, label.size=3, data=d$samples, colour = 'group', main="raw counts")
 autoplot(prcomp(t(logcounts)), shape=F, label=T, label.size=3, data=d$samples, colour = 'group', main="log counts")
 autoplot(prcomp(t(zlog)), shape=F, label=T, label.size=3, data=d$samples, colour = 'group', main="z score")
-autoplot(prcomp(t(fittedcount)), shape=F, label=T, label.size=3, data=d$samples, colour = 'group', main="fitted counts")
+autoplot(prcomp(t(fittedcount_norm)), shape=F, label=T, label.size=3, data=d$samples, colour = 'group', main="normalized fitted counts")
 dev.off()
 
 # 2群の尤度比検定
 tt <- topTags(lrt, sort.by="none", n=nrow(data))
 
+## normalize後のfitted valueを表示
 if(ncolskip==0){
-	cnts <- cbind(rownames(lrt$fitted.values), lrt$fitted.values, tt$table)
+	cnts <- cbind(rownames(lrt$fitted.values), fittedcount_norm, tt$table, annotation)
 }else{
-	cnts <- cbind(rownames(lrt$fitted.values), genename, lrt$fitted.values, tt$table)
+	cnts <- cbind(rownames(lrt$fitted.values), genename, fittedcount_norm, tt$table, annotation)
 }
 
 colnames(cnts)[1] <- "Ensembl ID"
@@ -255,7 +272,7 @@ volc = volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decre
 ggsave(paste(output, ".edgeR.Volcano.pdf", sep=""), plot=volc, device="pdf")
 
 # DEGsのクラスタリング
-logt <- apply(fittedcount[significant,]+1, c(1,2), log2)
+logt <- apply(fittedcount_norm[significant,]+1, c(1,2), log2)
 logt.z <- normalize(logt, byrow=T)
 colnames(logt.z) <- colnames(logt)
 dist.z <- dist(logt.z)
