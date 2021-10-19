@@ -166,19 +166,6 @@ pdf(paste(output, ".DESeq2.Dispersionplot.pdf", sep=""), height=7, width=7)
 plotDispEsts(dds)
 dev.off()
 
-# Volcano plot
-cat('\nmake Volcano plot\n',file=stdout())
-library(ggplot2)
-library(ggrepel)
-res_temp <- res[order(res$pvalue),]
-volcanoData <- data.frame(Gene=genename, logFC=res_temp$log2FoldChange, FDR=-log10(res_temp$padj), significant=res_temp$padj < p)
-volc = ggplot(volcanoData, aes(logFC, FDR)) +
-    geom_point(aes(col=significant)) +
-    scale_color_manual(values=c("black", "red")) +
-    ggtitle(paste("Volcano plot (", gname1, ", ", gname2, ")", sep=""))
-volc = volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decreasing=T),], 20), aes(label=Gene))
-ggsave(paste(output, ".DESeq2.Volcano.pdf", sep=""), plot=volc, device="pdf")
-
 ## ----log+1よりも頑健な補正法
 vsd <- vst(dds, blind=FALSE)
 #rld <- rlog(dds, blind=FALSE)
@@ -187,7 +174,6 @@ head(assay(vsd), 3)
 
 #rlogMat <- assay(rld)
 vsdMat <- assay(vsd)
-
 
 cnts <- cbind(rownames(counts_norm), genename, counts_norm, vsdMat, res, annotation)
 colnames(cnts)[1] <- "Gene id"
@@ -214,6 +200,20 @@ write.table(resOrdered, file=paste(output, ".DESeq2.all.tsv", sep=""), quote=F, 
 write.table(resSig,     file=paste(output, ".DESeq2.DEGs.tsv", sep=""), quote=F, sep="\t",row.names = F, col.names = T)
 write.table(resSig[resSig$log2FoldChange>0,], file=paste(output, ".DESeq2.upDEGs.tsv", sep=""), quote=F, sep="\t",row.names = F, col.names = T)
 write.table(resSig[resSig$log2FoldChange<0,], file=paste(output, ".DESeq2.downDEGs.tsv", sep=""), quote=F, sep="\t",row.names = F, col.names = T)
+
+# Volcano plot
+cat('\nmake Volcano plot\n',file=stdout())
+library(ggplot2)
+library(ggrepel)
+volcanoData <- data.frame(Gene=resOrdered$genename, logFC=resOrdered$log2FoldChange,
+                          FDR=-log10(resOrdered$padj), significant=resOrdered$padj < p)
+volc = ggplot(volcanoData, aes(logFC, FDR)) +
+    geom_point(aes(col=significant)) +
+    scale_color_manual(values=c("black", "red")) +
+    ggtitle(paste("Volcano plot (", gname1, ", ", gname2, ")", sep=""))
+volc = volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decreasing=T),], 20), aes(label=Gene))
+ggsave(paste(output, ".DESeq2.Volcano.pdf", sep=""), plot=volc, device="pdf")
+
 
 pdf(paste(output, ".DESeq2.topDEGs.pdf", sep=""), height=14, width=14)
 par(mfrow=c(3,3))
