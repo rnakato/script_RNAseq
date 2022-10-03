@@ -10,6 +10,7 @@ print.usage <- function() {
 	cat('      -ncolskip=<int> , colmun num to be skiped (default: 0) \n',file=stderr())
 	cat('      -gname=<name1>:<name2> , name of each group \n',file=stderr())
 	cat('      -p=<float>      , threshold for FDR (default: 0.01) \n',file=stderr())
+	cat('      -lfcthre=<float> , threshold of log2(foldchange) (default: 0) \n',file=stderr())
 	cat('      -color=<color>  , heatmap color (blue|orange|purple|green , default: blue) \n',file=stderr())
 	cat('   OUTPUT ARGUMENTS\n',file=stderr())
 	cat('      -o=<output> , prefix of output file \n',file=stderr())
@@ -31,6 +32,8 @@ p <- 0.01
 color <- "blue"
 gname1 <- "group1"
 gname2 <- "group2"
+lfcthre <- 0
+
 for (each.arg in args) {
     if (grepl('^-i=',each.arg)) {
         arg.split <- strsplit(each.arg,'=',fixed=TRUE)[[1]]
@@ -91,7 +94,13 @@ for (each.arg in args) {
         }
         else { stop('No value provided for parameter -ncolskip=')}
     }
-
+    else if (grepl('^-lfcthre=',each.arg)) {
+        arg.split <- strsplit(each.arg,'=',fixed=TRUE)[[1]]
+        if (! is.na(arg.split[2]) ) {
+            lfcthre <- as.numeric(arg.split[2])
+        }
+        else { stop('No value provided for parameter -lfcthre=')}
+    }
     else if (grepl('^-p=',each.arg)) {
         arg.split <- strsplit(each.arg,'=',fixed=TRUE)[[1]]
         if (! is.na(arg.split[2]) ) {
@@ -110,6 +119,7 @@ filename
 color
 nrowname
 p
+lfcthre
 num1
 num2
 output
@@ -151,18 +161,24 @@ if (ncolskip==1) {
 
 name <- colnames(data)
 counts <- as.matrix(data)
-
 colnames(counts)
 
+library(edgeR)
+d <- DGEList(counts = counts, group = group)
 cat('\ndim(', filename, ')\n',file=stdout())
 dim(counts)
 
-### omit 0 rows
-cat('\ndim(', filename, ') after omitting non-expressed transcripts\n',file=stdout())
-dim(counts)
+### filter lowly expressed genes
+keep <- filterByExpr(d, group=group)
+d <- d[keep, , keep.lib.sizes=FALSE]
+counts <- counts[keep,]
+genename <- genename[keep]
+annotation <- annotation[keep,]
+cat('\nThe number of transcripts after filtering lowly expressed ones by filterByExpr\n',file=stdout())
+sum(keep)
 
 ### log and z_score
-cat('\nlog(count+1) and z-scored\n',file=stdout())
+cat('\nlog(count+1) and z-scored\n', file=stdout())
 library(som)
 logcounts <- log2(counts+1)
 zlog <- normalize(logcounts, byrow=T)  # logcountsを元にしたz-score
@@ -170,26 +186,38 @@ zlog[which(is.na(zlog))] <- 0          # 欠損値(全サンプルで同じ値)�
 colnames(zlog) <- colnames(logcounts)
 
 ### fitted count
-library(edgeR)
-d <- DGEList(counts = counts, group = group)
 d <- calcNormFactors(d)  # TMM norm factor
 d$samples$scaling_factor = d$samples$lib.size * d$samples$norm.factors / mean(d$samples$lib.size)  # fittedcount補正係数
 d$samples
 
 d <- estimateDisp(d, design)
-#d <- estimateGLMCommonDisp(d, design)  # variance  μ(1 + μφ)  for all genes
-#d <- estimateGLMTrendedDisp(d, design)
-#d <- estimateGLMTagwiseDisp(d, design) # variance  μ(1 + μφ)  for each gene
+### d <- estimateGLMCommonDisp(d, design)  # variance  μ(1 + μφ)  for all genes
+### d <- estimateGLMTrendedDisp(d, design)
+### d <- estimateGLMTagwiseDisp(d, design) # variance  μ(1 + μφ)  for each gene
 
 fit <- glmQLFit(d, design)
-qlf <- glmQLFTest(fit, coef=2)
-fittedcount <- qlf$fitted.values
-tt <- topTags(qlf, sort.by="none", n=nrow(data))
+if (lfcthre > 0) {
+   # Option to use foldchange threhold
+   qlf <- glmTreat(fit, coef=2, lfc=1)
+} else {
+   # The quasi-likelihood F-tests (recommended for bulk RNA-seq)
+   qlf <- glmQLFTest(fit, coef=2)
+}
 
+fittedcount <- qlf$fitted.values
+tt <- topTags(qlf, sort.by="none", n=sum(keep))
+
+# The likelihood ratio tests (recommended for scRNA-seq or RNA-seq without replicates)
 #fit <- glmFit(d, design)
 #lrt <- glmLRT(fit, coef = 2)
 #tt <- topTags(lrt, sort.by="none", n=nrow(data))
 #fittedcount <- lrt$fitted.values
+
+# GO/Pathway analysis
+#go <- goana(qlf, species="Mm")
+#topGO(go, sort="up")
+#keg <- kegga(qlf, species="Mm")
+#topKEGG(keg, sort="up")
 
 fittedcount_norm <- t(t(fittedcount) / d$samples$scaling_factor)
 
@@ -267,39 +295,44 @@ volc = ggplot(volcanoData, aes(logFC, FDR)) +
     geom_point(aes(col=significant)) +
     scale_color_manual(values=c("black", "red")) +
     ggtitle(paste("Volcano plot (", gname1, ", ", gname2, ")", sep=""))
-volc = volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decreasing=T),], 20), aes(label=Gene))
+    volc = volc + geom_text_repel(data=head(volcanoData[order(volcanoData$FDR, decreasing=T),], 20), aes(label=Gene))
 ggsave(paste(output, ".edgeR.Volcano.pdf", sep=""), plot=volc, device="pdf")
 
 # DEGsのクラスタリング
-logt <- apply(fittedcount_norm[significant,]+1, c(1,2), log2)
-logt.z <- normalize(logt, byrow=T)
-colnames(logt.z) <- colnames(logt)
-dist.z <- dist(logt.z)
-tdist.z <- dist(t(logt.z))
-rlt.z <- hclust(dist.z, method="ward.D2")
-trlt.z <- hclust(tdist.z, method="ward.D2")
+if(sum(significant) > 0){
+    cat('\ncluster DEGs\n',file=stdout())
+    logt <- apply(fittedcount_norm[significant,]+1, c(1,2), log2)
+    logt.z <- normalize(logt, byrow=T)
+    colnames(logt.z) <- colnames(logt)
+    dist.z <- dist(logt.z)
+    tdist.z <- dist(t(logt.z))
+    rlt.z <- hclust(dist.z, method="ward.D2")
+    trlt.z <- hclust(tdist.z, method="ward.D2")
 
-pdf(paste(output, ".samplesCluster.inDEGs.pdf", sep=""), height=7, width=7)
-plot(trlt.z)
-dev.off()
+    pdf(paste(output, ".samplesCluster.inDEGs.pdf", sep=""), height=7, width=7)
+    plot(trlt.z)
+    dev.off()
 
-#heatmap
-cat('\nmake heatmap\n',file=stdout())
-library("RColorBrewer")
-library("gplots")
+    #heatmap
+    cat('\nmake heatmap\n',file=stdout())
+    library("RColorBrewer")
+    library("gplots")
 
-if(color=="blue"){
-    hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
-}else if(color=="green"){
-    hmcol <- colorRampPalette(brewer.pal(9, "YlGn"))(100)
-}else if(color=="orange"){
-    hmcol <- colorRampPalette(brewer.pal(9, "OrRd"))(100)
-}else if(color=="purple"){
-    hmcol <- colorRampPalette(brewer.pal(9, "Purples"))(100)
+    if(color=="blue"){
+        hmcol <- colorRampPalette(brewer.pal(9, "GnBu"))(100)
+    }else if(color=="green"){
+        hmcol <- colorRampPalette(brewer.pal(9, "YlGn"))(100)
+    }else if(color=="orange"){
+        hmcol <- colorRampPalette(brewer.pal(9, "OrRd"))(100)
+    }else if(color=="purple"){
+        hmcol <- colorRampPalette(brewer.pal(9, "Purples"))(100)
+    }
+
+    png(paste(output, ".heatmap.", p,".png", sep=""), h=1000, w=1000, pointsize=20)
+    heatmap.2(logt.z, scale = "none",
+              dendrogram="both", Rowv=as.dendrogram(rlt.z), Colv=as.dendrogram(trlt.z), trace="none",
+              col=hmcol, key.title="Color Key", key.xlab="Z score", key.ylab=NA)
+    dev.off()
+} else {
+    cat('\nNo DEGs identified. Quit.\n',file=stdout())
 }
-
-png(paste(output, ".heatmap.", p,".png", sep=""), h=1000, w=1000, pointsize=20)
-heatmap.2(logt.z, scale = "none",
-          dendrogram="both", Rowv=as.dendrogram(rlt.z), Colv=as.dendrogram(trlt.z), trace="none",
-          col=hmcol, key.title="Color Key", key.xlab="Z score", key.ylab=NA)
-dev.off()
